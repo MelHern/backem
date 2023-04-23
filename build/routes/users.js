@@ -19,11 +19,11 @@ router.get('/', function (req, res, next) {
     res.send('respond with a resource');
 });
 router.post('/register', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const con = conectarBD.conectar();
     const email = req.query.email;
     const password = yield bcrypt.hashSync(req.query.password, 10);
     let query = `INSERT INTO usuarios (email, rol, password) VALUES (?,?,?)`;
-    con.query(query, [email, 1, password], function (err, result, fields) {
+    let conexion = new conectarBD();
+    conexion.conectar().query(query, [email, 1, password], function (err, result, fields) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log(result);
             res.header().json({
@@ -36,24 +36,35 @@ router.post('/register', (req, res) => __awaiter(void 0, void 0, void 0, functio
 }));
 router.post('/login', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // validaciones
-    const con = conectarBD.conectar();
-    let email = req.query.email;
-    let query = "SELECT * FROM usuarios where email=?";
-    con.query(query, [email], function (err, result, fields) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const validPassword = yield bcrypt.compare(req.query.password, result[0].password);
-            console.log(validPassword);
-            const token = jwt.sign({
-                name: result[0].email,
-                id: result[0].id
-            }, process.env.TOKEN_SECRET);
-            res.header('auth-token', token).json({
-                'error': null,
-                'data': token,
-                'rol': result[0].rol
+    try {
+        let email = req.body.email;
+        let password = req.body.password;
+        console.log(email, password);
+        let query = "SELECT * FROM usuarios where email=?";
+        let conexion = new conectarBD();
+        conexion.conectar().query(query, [email], function (err, result, fields) {
+            return __awaiter(this, void 0, void 0, function* () {
+                const validPassword = yield bcrypt.compare(password, result[0].password);
+                if (validPassword) {
+                    const token = jwt.sign({
+                        name: result[0].email,
+                        id: result[0].id
+                    }, process.env.TOKEN_SECRET);
+                    res.header('auth-token', token).json({
+                        'error': null,
+                        'data': token,
+                        'rol': result[0].rol
+                    });
+                }
+                else {
+                    res.json('error');
+                }
             });
         });
-    });
+        conexion.desconectar();
+    }
+    catch (error) {
+        res.json(error);
+    }
 }));
-// create token
 module.exports = router;

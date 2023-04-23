@@ -12,7 +12,7 @@ router.get('/', function(req:any, res:any, next:any) {
 
 router.post('/register', async (req:any, res:any) => {
 
-  const con= conectarBD.conectar();
+
 
 
   const email=req.query.email;
@@ -22,8 +22,10 @@ router.post('/register', async (req:any, res:any) => {
   
  
   let query=`INSERT INTO usuarios (email, rol, password) VALUES (?,?,?)`;
+
+  let conexion=new conectarBD();
   
-  con.query(query,[email,1,password], async function (err:any, result:any, fields:any) {
+  conexion.conectar().query(query,[email,1,password], async function (err:any, result:any, fields:any) {
 
 
     console.log(result);
@@ -41,33 +43,48 @@ router.post('/register', async (req:any, res:any) => {
 
 router.post('/login', async (req:any, res:any) => {
   // validaciones
-  const con= conectarBD.conectar();
+try {
+  
 
+  let email=req.body.email;
+  let password= req.body.password;
 
-  let email=req.query.email;
+  console.log(email,password);
  
   let query="SELECT * FROM usuarios where email=?";
-  con.query(query,[email], async function (err:any, result:any, fields:any) {
-  
-    const validPassword = await bcrypt.compare(req.query.password, result[0].password);
 
-    console.log(validPassword);
+  let conexion=new conectarBD();
+  conexion.conectar().query(query,[email], async function (err:any, result:any, fields:any) {
+  
+ 
+    const validPassword = await bcrypt.compare(password, result[0].password);
+
+    if(validPassword){
     const token = jwt.sign({
       name: result[0].email,
       id: result[0].id
   }, process.env.TOKEN_SECRET)
+ 
 
   res.header('auth-token', token).json({
     'error': null,
     'data': token,
     'rol':result[0].rol
   })
-    
+}
+else{
+  res.json('error');
+}
+
+
   });
+  conexion.desconectar();
+} catch (error) {
+  res.json(error);
+}
 
 });
-  
-  // create token
+
 
   
 

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 // lib/app.ts
 const express = require("express");
+const cors = require('cors');
 var path = require('path');
 // Create a new express application instance
 const app = express();
@@ -12,6 +13,13 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var configuracoinesRouter = require('./routes/configuraciones');
 var facturasVentas = require('./routes/facturasVentas');
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: false }));
+// parse application/json
+app.use(bodyParser.json());
+app.use(cors({
+    origin: '*'
+}));
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', function (req, res) {
     res.send('Hello World!');
